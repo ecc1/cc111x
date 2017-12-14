@@ -2,4 +2,7 @@ package cc111x
 
 // Configuration for Intel Edison.
 
-const spiDevice = "/dev/spidev5.1"
+const (
+	spiDevice = "/dev/spidev5.1"
+	resetPin  = 36
+)

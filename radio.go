@@ -73,8 +73,13 @@ func (r *Radio) Receive(timeout time.Duration) ([]byte, int) {
 	r.request(CmdGetPacket, params...)
 	data := r.response()
 	if len(data) <= 2 {
-		e := ErrorCode(data[0])
-		r.SetError(fmt.Errorf("%v", e))
+		var err error
+		if len(data) == 0 {
+			err = fmt.Errorf("Receive: empty packet")
+		} else {
+			err = fmt.Errorf("Receive: %v", ErrorCode(data[0]))
+		}
+		r.SetError(err)
 		return nil, 0
 	}
 	r.stats.Packets.Received++

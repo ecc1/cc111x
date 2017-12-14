@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ecc1/gpio"
 	"github.com/ecc1/radio"
 	"github.com/ecc1/spi"
 )
@@ -29,6 +30,7 @@ func init() {
 // Radio represents an open radio device.
 type Radio struct {
 	device        *spi.Device
+	resetPin      gpio.OutputPin
 	receiveBuffer bytes.Buffer
 	stats         radio.Statistics
 	err           error
@@ -41,10 +43,18 @@ func Open() *Radio {
 	if r.err != nil {
 		return r
 	}
-	r.Flush()
+	r.resetPin, r.err = gpio.Output(resetPin, true, false)
+	if r.err != nil {
+		r.Close()
+		return r
+	}
+	r.Reset()
 	v := r.Version()
 	if !strings.HasPrefix(v, firmwarePrefix) {
 		r.err = fmt.Errorf("unexpected firmware version %q", v)
+	}
+	if r.err != nil {
+		r.Close()
 	}
 	return r
 }
@@ -77,7 +87,13 @@ func (r *Radio) Version() string {
 }
 
 func (r *Radio) Reset() {
-	r.request(CmdReset)
+	if r.Error() != nil {
+		return
+	}
+	_ = r.resetPin.Write(true)
+	time.Sleep(100 * time.Microsecond)
+	r.err = r.resetPin.Write(false)
+	time.Sleep(1 * time.Second)
 }
 
 // Init initializes the radio device.
