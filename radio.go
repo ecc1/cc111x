@@ -15,13 +15,13 @@ const (
 
 func (r *Radio) ReadRegister(addr byte) byte {
 	r.request(CmdReadRegister, addr)
-	b := r.response()
+	b := r.response(defaultTimeout)
 	return b[0]
 }
 
 func (r *Radio) WriteRegister(addr byte, value byte) {
 	r.request(CmdUpdateRegister, addr, value)
-	_ = r.response()
+	_ = r.response(defaultTimeout)
 }
 
 // Frequency returns the radio's current frequency, in Hertz.
@@ -46,14 +46,14 @@ func (r *Radio) Send(data []byte) {
 	if r.Error() != nil {
 		return
 	}
-	// Terminate packet with zero byte.
-	params := make([]byte, 3+len(data)+1)
+	// Terminate packet with 2 zero bytes.
+	params := make([]byte, 3+len(data)+2)
 	params[0] = 0 // channel
 	params[1] = 1 // repeat
 	params[2] = 0 // delay
 	copy(params[3:], data)
 	r.request(CmdSendPacket, params...)
-	_ = r.response()
+	_ = r.response(defaultTimeout)
 	if r.Error() == nil {
 		r.stats.Packets.Sent++
 		r.stats.Bytes.Sent += len(data)
@@ -71,15 +71,12 @@ func (r *Radio) Receive(timeout time.Duration) ([]byte, int) {
 	ms := uint32(timeout / time.Millisecond)
 	params := append([]byte{byte(channel)}, marshalUint32(ms)...)
 	r.request(CmdGetPacket, params...)
-	data := r.response()
+	data := r.response(timeout)
+	if len(data) == 0 {
+		return nil, 0
+	}
 	if len(data) <= 2 {
-		var err error
-		if len(data) == 0 {
-			err = fmt.Errorf("Receive: empty packet")
-		} else {
-			err = fmt.Errorf("Receive: %v", ErrorCode(data[0]))
-		}
-		r.SetError(err)
+		r.SetError(fmt.Errorf("Receive: %v", ErrorCode(data[0])))
 		return nil, 0
 	}
 	r.stats.Packets.Received++

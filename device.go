@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	firmwarePrefix = "subg_rfspy"
-	spiSpeed       = 62500 // Hz
+	defaultTimeout = 50 * time.Millisecond
 
 	verbose    = false
 	verboseSPI = false
@@ -38,6 +37,10 @@ type Radio struct {
 
 // Open opens the radio device.
 func Open() *Radio {
+	const (
+		spiSpeed       = 62500 // Hz
+		firmwarePrefix = "subg_rfspy"
+	)
 	r := &Radio{}
 	r.device, r.err = spi.Open(spiDevice, spiSpeed, 0)
 	if r.err != nil {
@@ -77,13 +80,13 @@ func (r *Radio) Device() string {
 // Version returns the radio's state.
 func (r *Radio) State() string {
 	r.request(CmdGetState)
-	return string(r.response())
+	return string(r.response(defaultTimeout))
 }
 
 // Version returns the radio's firmware version.
 func (r *Radio) Version() string {
 	r.request(CmdGetVersion)
-	return string(r.response())
+	return string(r.response(defaultTimeout))
 }
 
 func (r *Radio) Reset() {
@@ -173,9 +176,9 @@ func (r *Radio) Flush() {
 	}
 }
 
-// TODO: add timeout
-func (r *Radio) response() []byte {
-	for {
+func (r *Radio) response(timeout time.Duration) []byte {
+	const pollInterval = 1 * time.Millisecond
+	for timeout > 0 {
 		b := r.receiveBuffer.Bytes()
 		n := len(b)
 		if n != 0 && b[n-1] == 0 {
@@ -183,12 +186,13 @@ func (r *Radio) response() []byte {
 			_, r.err = r.receiveBuffer.Read(p)
 			r.receiveBuffer.Reset()
 			if verbose {
-				log.Printf("received %d-byte message %q", n-1, p)
+				log.Printf("received %d-byte message % X", n-1, p)
 			}
 			return p
 		}
 		// Haven't received terminating 0 byte yet.
-		time.Sleep(time.Millisecond)
+		time.Sleep(pollInterval)
+		timeout -= pollInterval
 		r.xfer(0x99)
 		count := r.xfer(0)
 		for count != 0 {
@@ -197,4 +201,8 @@ func (r *Radio) response() []byte {
 			count--
 		}
 	}
+	if verbose {
+		log.Printf("receive timeout")
+	}
+	return nil
 }
