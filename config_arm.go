@@ -4,5 +4,5 @@ package cc111x
 
 const (
 	spiDevice = "/dev/spidev0.0"
-	resetPin  = 24
+	resetPin  = 7
 )
