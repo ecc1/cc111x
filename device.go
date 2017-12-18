@@ -136,7 +136,11 @@ func (r *Radio) xfer(b byte) byte {
 	r.err = r.device.Transfer(buf)
 	c := bits.Reverse8(buf[0])
 	if verboseSPI {
-		log.Printf("xfer %02X -> %02X", b, c)
+		if r.err != nil {
+			log.Printf("xfer %02X -> %02X (%v)", b, c, r.err)
+		} else {
+			log.Printf("xfer %02X -> %02X", b, c)
+		}
 	}
 	return c
 }
