@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultTimeout = 50 * time.Millisecond
+	defaultTimeout = 20 * time.Millisecond
 
 	verbose    = false
 	verboseSPI = false
@@ -47,7 +47,7 @@ func Open() *Radio {
 		firmwarePrefix = "subg_rfspy"
 	)
 	r := &Radio{}
-	r.device, r.err = spi.Open(spiDevice, spiSpeed, 0)
+	r.device, r.err = spi.Open(spiDevice, spiSpeed, customCS)
 	if r.err != nil {
 		return r
 	}

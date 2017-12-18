@@ -4,5 +4,6 @@ package cc111x
 
 const (
 	spiDevice = "/dev/null"
+	customCS  = 0
 	resetPin  = 0
 )

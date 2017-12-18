@@ -1,8 +1,9 @@
 package cc111x
 
-// Configuration for Intel Edison.
+// Configuration for Intel Edison with Explorer radio board.
 
 const (
 	spiDevice = "/dev/spidev5.1"
-	resetPin  = 36
+	customCS  = 110
+	resetPin  = 14
 )
