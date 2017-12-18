@@ -9,7 +9,6 @@ import (
 
 func main() {
 	r := cc111x.Open()
-	r.Flush()
 	if r.Error() != nil {
 		log.Fatal(r.Error())
 	}
