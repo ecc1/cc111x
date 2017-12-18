@@ -16,6 +16,9 @@ const (
 func (r *Radio) ReadRegister(addr byte) byte {
 	r.request(CmdReadRegister, addr)
 	b := r.response(defaultTimeout)
+	if r.Error() != nil {
+		return 0
+	}
 	return b[0]
 }
 

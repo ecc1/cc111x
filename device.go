@@ -2,6 +2,7 @@ package cc111x
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"math/bits"
@@ -18,6 +19,10 @@ const (
 
 	verbose    = false
 	verboseSPI = false
+)
+
+var (
+	errNoResponse = errors.New("no response")
 )
 
 func init() {
@@ -47,12 +52,12 @@ func Open() *Radio {
 		return r
 	}
 	r.resetPin, r.err = gpio.Output(resetPin, true, false)
+	r.Reset()
+	v := r.Version()
 	if r.err != nil {
 		r.Close()
 		return r
 	}
-	r.Reset()
-	v := r.Version()
 	if !strings.HasPrefix(v, firmwarePrefix) {
 		r.err = fmt.Errorf("unexpected firmware version %q", v)
 	}
@@ -64,7 +69,7 @@ func Open() *Radio {
 
 // Close closes the radio device.
 func (r *Radio) Close() {
-	r.err = r.device.Close()
+	r.device.Close()
 }
 
 // Name returns the radio's name.
@@ -202,7 +207,8 @@ func (r *Radio) response(timeout time.Duration) []byte {
 		}
 	}
 	if verbose {
-		log.Printf("receive timeout")
+		log.Printf("no response")
 	}
+	r.SetError(errNoResponse)
 	return nil
 }
