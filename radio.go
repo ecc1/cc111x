@@ -56,7 +56,8 @@ func (r *Radio) Send(data []byte) {
 	params[2] = 0 // delay
 	copy(params[3:], data)
 	r.request(CmdSendPacket, params...)
-	_ = r.response(defaultTimeout)
+	timeout := time.Duration(len(params)) * time.Millisecond
+	_ = r.response(timeout)
 	if r.Error() == nil {
 		r.stats.Packets.Sent++
 		r.stats.Bytes.Sent += len(data)
