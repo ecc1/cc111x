@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// CC111x hardware-related constants.
 const (
 	FXOSC = 24000000 // Crystal frequency in Hz
 
@@ -13,6 +14,7 @@ const (
 	FREQ0 = 0x0B // Frequency control word, low byte
 )
 
+// ReadRegister returns the value of a CC111x register.
 func (r *Radio) ReadRegister(addr byte) byte {
 	r.request(CmdReadRegister, addr)
 	b := r.response(defaultTimeout)
@@ -22,6 +24,7 @@ func (r *Radio) ReadRegister(addr byte) byte {
 	return b[0]
 }
 
+// WriteRegister writes a value to a CC111x register.
 func (r *Radio) WriteRegister(addr byte, value byte) {
 	r.request(CmdUpdateRegister, addr, value)
 	_ = r.response(defaultTimeout)

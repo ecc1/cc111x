@@ -6,6 +6,7 @@ type Command byte
 
 //go:generate stringer -type Command
 
+// subg_rfspy commands.
 const (
 	CmdGetState       Command = 1
 	CmdGetVersion     Command = 2
@@ -23,6 +24,7 @@ type ErrorCode byte
 
 //go:generate stringer -type ErrorCode
 
+// subg_rfspy error codes.
 const (
 	ErrorRXTimeout      ErrorCode = 0xaa
 	ErrorCmdInterrupted ErrorCode = 0xbb

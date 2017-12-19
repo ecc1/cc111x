@@ -69,7 +69,7 @@ func Open() *Radio {
 
 // Close closes the radio device.
 func (r *Radio) Close() {
-	r.device.Close()
+	_ = r.device.Close()
 }
 
 // Name returns the radio's name.
@@ -82,7 +82,7 @@ func (r *Radio) Device() string {
 	return spiDevice
 }
 
-// Version returns the radio's state.
+// State returns the radio's state.
 func (r *Radio) State() string {
 	r.request(CmdGetState)
 	return string(r.response(defaultTimeout))
@@ -94,6 +94,7 @@ func (r *Radio) Version() string {
 	return string(r.response(defaultTimeout))
 }
 
+// Reset resets the CC111x hardware.
 func (r *Radio) Reset() {
 	if r.Error() != nil {
 		return
@@ -176,7 +177,8 @@ func (r *Radio) request(cmd Command, params ...byte) {
 	r.sendRequest(data)
 }
 
-func (r *Radio) Flush() {
+// Drain reads and discards any pending input from the subg_rfspy firmware.
+func (r *Radio) Drain() {
 	r.xfer(0x99)
 	count := r.xfer(0)
 	for count != 0 {
