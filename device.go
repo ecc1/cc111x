@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultTimeout = 20 * time.Millisecond
+	defaultTimeout = 50 * time.Millisecond
 
 	verbose    = false
 	verboseSPI = false
