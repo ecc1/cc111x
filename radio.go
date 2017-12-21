@@ -52,8 +52,8 @@ func (r *Radio) Send(data []byte) {
 	if r.Error() != nil {
 		return
 	}
-	// Terminate packet with 2 zero bytes.
-	params := make([]byte, 3+len(data)+2)
+	// Terminate packet with a zero byte.
+	params := make([]byte, 3+len(data)+1)
 	params[0] = 0 // channel
 	params[1] = 1 // repeat
 	params[2] = 0 // delay

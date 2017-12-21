@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/bits"
 	"strings"
@@ -99,6 +100,9 @@ func (r *Radio) Reset() {
 	if r.Error() != nil {
 		return
 	}
+	if verbose {
+		log.Printf("resetting CC111x")
+	}
 	_ = r.resetPin.Write(true)
 	time.Sleep(100 * time.Microsecond)
 	r.err = r.resetPin.Write(false)
@@ -165,7 +169,10 @@ func (r *Radio) sendRequest(data []byte) {
 	}
 	for count != 0 {
 		rx := r.xfer(0)
-		r.err = r.receiveBuffer.WriteByte(rx)
+		err := r.receiveBuffer.WriteByte(rx)
+		if r.err == nil {
+			r.err = err
+		}
 		count--
 	}
 }
@@ -187,30 +194,61 @@ func (r *Radio) Drain() {
 	}
 }
 
+// Available reads any pending input from the subg_rfspy firmware
+// and returns the byte count.
+func (r *Radio) Available() int {
+	r.xfer(0x99)
+	count := r.xfer(0)
+	for count != 0 {
+		rx := r.xfer(0)
+		err := r.receiveBuffer.WriteByte(rx)
+		if r.err == nil {
+			r.err = err
+		}
+		count--
+	}
+	return r.receiveBuffer.Len()
+}
+
+func (r *Radio) readResponse(w io.Writer) {
+	n := r.receiveBuffer.Len()
+	if n != 0 {
+		_, r.err = w.Write(r.receiveBuffer.Bytes())
+		r.receiveBuffer.Reset()
+		if verbose {
+			log.Printf("read %d bytes", n)
+		}
+	}
+}
+
 func (r *Radio) response(timeout time.Duration) []byte {
 	const pollInterval = 1 * time.Millisecond
+	var buf bytes.Buffer
 	for timeout > 0 {
-		b := r.receiveBuffer.Bytes()
-		n := len(b)
-		if n != 0 && b[n-1] == 0 {
-			p := make([]byte, n-1)
-			_, r.err = r.receiveBuffer.Read(p)
-			r.receiveBuffer.Reset()
-			if verbose {
-				log.Printf("received %d-byte message % X", n-1, p)
+		n := r.Available()
+		if n > 0 {
+			r.readResponse(&buf)
+			b := buf.Bytes()
+			i := bytes.LastIndexByte(b, 0)
+			switch i {
+			case -1:
+				// No terminating 0 byte.
+			case 0:
+				if verbose {
+					log.Printf("received empty response")
+				}
+				return nil
+			default:
+				p := make([]byte, i)
+				copy(p, b[:i])
+				if verbose {
+					log.Printf("received %d-byte response % X", i, p)
+				}
+				return p
 			}
-			return p
 		}
-		// Haven't received terminating 0 byte yet.
 		time.Sleep(pollInterval)
 		timeout -= pollInterval
-		r.xfer(0x99)
-		count := r.xfer(0)
-		for count != 0 {
-			rx := r.xfer(0)
-			r.err = r.receiveBuffer.WriteByte(rx)
-			count--
-		}
 	}
 	if verbose {
 		log.Printf("no response")
