@@ -15,10 +15,11 @@ const (
 )
 
 // ReadRegister returns the value of a CC111x register.
+// This is only available on subg_rfspy 1.0 or later.
 func (r *Radio) ReadRegister(addr byte) byte {
 	r.request(CmdReadRegister, addr)
 	b := r.response(defaultTimeout)
-	if r.Error() != nil {
+	if len(b) == 0 {
 		return 0
 	}
 	return b[0]
