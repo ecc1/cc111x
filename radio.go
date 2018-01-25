@@ -56,7 +56,7 @@ func (r *Radio) Send(data []byte) {
 	// Terminate packet with a zero byte.
 	params := make([]byte, 3+len(data)+1)
 	params[0] = 0 // channel
-	params[1] = 1 // repeat
+	params[1] = 0 // repeat
 	params[2] = 0 // delay
 	copy(params[3:], data)
 	r.request(CmdSendPacket, params...)
@@ -82,7 +82,35 @@ func (r *Radio) Receive(timeout time.Duration) ([]byte, int) {
 	ms := uint32(timeout / time.Millisecond)
 	params := append([]byte{byte(channel)}, marshalUint32(ms)...)
 	r.request(CmdGetPacket, params...)
-	data := r.response(timeout)
+	return r.finishReceive(timeout)
+}
+
+// SendAndReceive sends the given packet,
+// then listens with the given timeout for an incoming packet.
+// It returns the packet and the associated RSSI.
+func (r *Radio) SendAndReceive(p []byte, timeout time.Duration) ([]byte, int) {
+	if r.Error() != nil {
+		return nil, 0
+	}
+	ms := uint32(timeout / time.Millisecond)
+	// Terminate packet with a zero byte.
+	params := make([]byte, 9+len(p)+1)
+	params[0] = 0 // send_channel
+	params[1] = 0 // repeat_count
+	params[2] = 0 // delay_ms
+	params[3] = 0 // listen_channel
+	copy(params[4:8], marshalUint32(ms))
+	params[8] = 0 // retry_count
+	copy(params[9:], p)
+	r.request(CmdSendAndListen, params...)
+	return r.finishReceive(timeout)
+}
+
+const rssiOffset = 73 // see data sheet section 13.10.3, table 68
+
+func (r *Radio) finishReceive(timeout time.Duration) ([]byte, int) {
+	// Wait a little longer than the firmware does.
+	data := r.response(timeout + 5*time.Millisecond)
 	if len(data) == 0 {
 		return nil, 0
 	}
