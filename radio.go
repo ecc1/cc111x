@@ -74,7 +74,6 @@ func (r *Radio) Send(data []byte) {
 // Receive listens with the given timeout for an incoming packet.
 // It returns the packet and the associated RSSI.
 func (r *Radio) Receive(timeout time.Duration) ([]byte, int) {
-	const rssiOffset = 73 // see data sheet section 13.10.3, table 68
 	if r.Error() != nil {
 		return nil, 0
 	}
@@ -109,21 +108,32 @@ func (r *Radio) SendAndReceive(p []byte, timeout time.Duration) ([]byte, int) {
 const rssiOffset = 73 // see data sheet section 13.10.3, table 68
 
 func (r *Radio) finishReceive(timeout time.Duration) ([]byte, int) {
-	// Wait a little longer than the firmware does.
-	data := r.response(timeout + 5*time.Millisecond)
-	if len(data) == 0 {
-		return nil, 0
+	var data []byte
+	for r.Error() == nil {
+		// Wait a little longer than the firmware does.
+		data = r.response(timeout + 5*time.Millisecond)
+		if len(data) == 0 {
+			break
+		}
+		if len(data) == 1 {
+			code := ErrorCode(data[0])
+			switch code {
+			case ErrorRXTimeout:
+			case ErrorCmdInterrupted:
+				continue
+			default:
+				r.SetError(fmt.Errorf("Receive: %v", code))
+			}
+			break
+		}
+		r.stats.Packets.Received++
+		r.stats.Bytes.Received += len(data)
+		rssi := int(data[0])
+		if rssi >= 128 {
+			rssi -= 256
+		}
+		rssi = rssi/2 - rssiOffset
+		return data[2:], rssi
 	}
-	if len(data) <= 2 {
-		r.SetError(fmt.Errorf("Receive: %v", ErrorCode(data[0])))
-		return nil, 0
-	}
-	r.stats.Packets.Received++
-	r.stats.Bytes.Received += len(data)
-	rssi := int(data[0])
-	if rssi >= 128 {
-		rssi -= 256
-	}
-	rssi = rssi/2 - rssiOffset
-	return data[2:], rssi
+	return nil, -128
 }
