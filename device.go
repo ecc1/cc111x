@@ -217,7 +217,7 @@ func (r *Radio) readResponse(buf *bytes.Buffer) {
 }
 
 func (r *Radio) response(timeout time.Duration) []byte {
-	const pollInterval = 5 * time.Millisecond
+	const pollInterval = 1 * time.Millisecond
 	buf := &r.receiveBuffer
 	for timeout > 0 {
 		r.readResponse(buf)
