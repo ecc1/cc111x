@@ -65,10 +65,6 @@ func (r *Radio) Send(data []byte) {
 		timeout = defaultTimeout
 	}
 	_ = r.response(timeout)
-	if r.Error() == nil {
-		r.stats.Packets.Sent++
-		r.stats.Bytes.Sent += len(data)
-	}
 }
 
 // Receive listens with the given timeout for an incoming packet.
@@ -126,8 +122,6 @@ func (r *Radio) finishReceive(timeout time.Duration) ([]byte, int) {
 			}
 			break
 		}
-		r.stats.Packets.Received++
-		r.stats.Bytes.Received += len(data)
 		rssi := int(data[0])
 		if rssi >= 128 {
 			rssi -= 256
