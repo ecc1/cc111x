@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	errNoResponse = errors.New("no response")
+	errNoResponse = errors.New("cc111x: no response")
 )
 
 func init() {
