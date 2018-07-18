@@ -1,9 +1,9 @@
 package cc111x
 
-// Configuration for amd64 (testing only).
+// Configuration for Intel Edison in 64-bit mode with Explorer radio board.
 
 const (
-	spiDevice = "/dev/null"
-	customCS  = 0
-	resetPin  = 0
+	spiDevice = "/dev/spidev5.1"
+	customCS  = 110
+	resetPin  = 14
 )
