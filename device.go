@@ -6,8 +6,6 @@ import (
 	"log"
 	"strings"
 	"time"
-
-	"github.com/ecc1/radio"
 )
 
 const (
@@ -87,9 +85,4 @@ func (r *Radio) Error() error {
 // SetError sets the error state of the radio device.
 func (r *Radio) SetError(err error) {
 	r.err = err
-}
-
-// Hardware returns the radio's hardware information.
-func (r *Radio) Hardware() *radio.Hardware {
-	panic("unimplemented")
 }
