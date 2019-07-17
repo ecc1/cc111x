@@ -53,7 +53,7 @@ func (r *Radio) Close() {
 }
 
 // Name returns the radio's name.
-func (r *Radio) Name() string {
+func (*Radio) Name() string {
 	return "CC111x"
 }
 

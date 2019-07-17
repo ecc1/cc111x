@@ -28,13 +28,13 @@ func openRadio() *Radio {
 }
 
 // Device returns the pathname of the radio's device.
-func (r *Radio) Device() string {
+func (*Radio) Device() string {
 	return serialDevice
 }
 
 // Reset resets the CC111x hardware.
 // (Can't reset when connected only via serial port.)
-func (r *Radio) Reset() {
+func (*Radio) Reset() {
 }
 
 func (r *Radio) request(cmd Command, params ...byte) {

@@ -40,7 +40,7 @@ func openRadio() *Radio {
 }
 
 // Device returns the pathname of the radio's device.
-func (r *Radio) Device() string {
+func (*Radio) Device() string {
 	return spiDevice
 }
 
