@@ -23,6 +23,8 @@ type Radio struct {
 	device        *spi.Device
 	resetPin      gpio.OutputPin
 	receiveBuffer bytes.Buffer
+	snd           []byte
+	rcv           []byte
 	err           error
 }
 
@@ -35,7 +37,10 @@ func openRadio() *Radio {
 	r.resetPin, r.err = gpio.Output(resetPin, true, false)
 	if r.err != nil {
 		r.Close()
+		return r
 	}
+	r.snd = make([]byte, 1)
+	r.rcv = make([]byte, 1)
 	return r
 }
 
@@ -52,18 +57,18 @@ func (r *Radio) Reset() {
 	if verbose {
 		log.Printf("resetting CC111x")
 	}
-	_ = r.resetPin.Write(true)
+	r.resetPin.Write(true)
 	time.Sleep(100 * time.Microsecond)
 	r.err = r.resetPin.Write(false)
 	time.Sleep(1 * time.Second)
 }
 
-var buf = make([]byte, 1)
+var ()
 
 func (r *Radio) xfer(b byte) byte {
-	buf[0] = bits.Reverse8(b)
-	r.err = r.device.Transfer(buf)
-	c := bits.Reverse8(buf[0])
+	r.snd[0] = bits.Reverse8(b)
+	r.err = r.device.Transfer(r.snd, r.rcv)
+	c := bits.Reverse8(r.rcv[0])
 	if verboseSPI {
 		if r.err != nil {
 			log.Printf("xfer %02X -> %02X (%v)", b, c, r.err)
